@@ -16,6 +16,13 @@ Available commands:
     """
     await update.message.reply_text(help_text)
 
+async def helpOutBro_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle the /help command"""
+    help_text = """
+dont worry about it got you, i got you, just enter in the chat "/help"
+    """
+    await update.message.reply_text(help_text)
+
 async def invalid_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle invalid commands"""
     await update.message.reply_text("Invalid command. Use /help to see available commands.")

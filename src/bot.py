@@ -1,7 +1,7 @@
 import logging
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from config import Config
-from handlers.basic_handlers import start_command, help_command, invalid_command
+from handlers.basic_handlers import *
 
 # Set up logging
 logging.basicConfig(
@@ -25,8 +25,8 @@ def main():
     # Add handlers
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("?", help_command))
-    application.add_handler(MessageHandler(filters.COMMAND,invalid_command))
+    application.add_handler(CommandHandler("HELPMEBRO", helpOutBro_command))
+    application.add_handler(MessageHandler(filters.COMMAND,help_command))
     
     # Add error handler
     application.add_error_handler(error_handler)
