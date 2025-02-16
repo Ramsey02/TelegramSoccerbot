@@ -22,12 +22,15 @@ def main():
     # Create application instance
     application = Application.builder().token(Config.BOT_TOKEN).build()
 
+    
     # Add handlers
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("HELPMEBRO", helpOutBro_command))
-    application.add_handler(MessageHandler(filters.COMMAND,help_command))
-    
+    application.add_handler(CommandHandler("register", register_handler))
+    application.add_handler(MessageHandler(filters.TEXT & ~ filters.COMMAND,notACommand_handler))
+    application.add_handler(MessageHandler(filters.COMMAND,invalid_command))
+
     # Add error handler
     application.add_error_handler(error_handler)
 
