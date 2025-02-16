@@ -25,6 +25,7 @@ def main():
     # Add handlers
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("?", help_command))
     application.add_handler(MessageHandler(filters.COMMAND,invalid_command))
     
     # Add error handler
