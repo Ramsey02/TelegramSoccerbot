@@ -38,4 +38,4 @@ async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(args) != 1:
         await update.message.reply_text("Usage: /register <name>")
         return
-    await update.message.reply_text("You have been registered {args[0]}!")
+    await update.message.reply_text("You have been registered " + args[0])
