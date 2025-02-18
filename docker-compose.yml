@@ -6,22 +6,17 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      # Mount source code for development
+      # Mount the source code directory to enable hot-reloading
       - ./src:/app/src
-      # Mount logs directory
-      - ./logs:/app/logs
-    env_file:
-      - .env
+      # Mount the .env file for configuration
+      - ./.env:/app/.env
     environment:
+      - PYTHONUNBUFFERED=1
       - ENVIRONMENT=development
-    # Enable interactive terminal
-    tty: true
-    stdin_open: true
-    # Restart policy for development
+    # Use the development command that includes auto-reloading
+    command: python -m src.bot
+    # Uncomment this if you want to use a debugger with Docker
+    # ports:
+    #   - "5678:5678"
+    # command: python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m src.bot
     restart: unless-stopped
-    # Health check
-    healthcheck:
-      test: ["CMD", "python", "-c", "import os; assert os.getenv('TELEGRAM_BOT_TOKEN')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3

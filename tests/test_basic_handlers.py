@@ -1,7 +1,7 @@
 import pytest
 from telegram import Update, Message, Chat, User
 from telegram.ext import ContextTypes
-from src.handlers.basic_handlers import start_command, help_command
+from ..src.handlers.basic_handlers import *
 
 @pytest.fixture
 def mock_update():
