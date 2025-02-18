@@ -2,7 +2,7 @@ import logging
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from config import Config
 from handlers.basic_handlers import *
-from models import Storage, Player, Game, GameStatus
+from models import Storage, Player, Game
 
 # Set up logging
 logging.basicConfig(
@@ -25,6 +25,7 @@ def main():
 
     
     # Add handlers
+    #  put try and catch for throwing errors
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("HELPMEBRO", helpOutBro_command))

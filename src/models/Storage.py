@@ -3,7 +3,7 @@ from datetime import datetime
 import uuid
 
 from .Player import Player
-from .Game import Game, GameStatus
+from .Game import Game
 
 # define for different players in different games
 class Storage:
@@ -11,43 +11,52 @@ class Storage:
     
     def __init__(self):
         """Initialize storage with empty collections."""
-        self.players: Dict[int, Player] = {}  # user_id -> Player
-        self.games: Dict[str, Game] = {}      # game_id -> Game
+        self.games: Dict[str, Game] = {}      # chat_id -> Game , game per chat group
+        # each groupchat got its own players lists so that we can manage the players in the group chat 
+        # each groupchat and user got thier own unique ids, 
+        # so we can use the chat_id and user_id to identify the players in the group chat
+        # and we can identify the player's groupchat by a defined function 
     
     # Player operations
-    def add_player(self, player: Player) -> None:
+    def add_player(self, player: Player, chat_id : int) -> bool:
         """Add or update a player in storage."""
-        self.players[player.user_id] = player
-    
-    def get_player(self, user_id: int) -> Optional[Player]:
+        if chat_id not in self.games:
+            return False
+        game = self.games[chat_id]
+        game.add_player(player.user_id)
+        return True
+        
+    def get_player(self, user_id: int, chat_id : int) -> Optional[Player]:
         """Get a player by user ID."""
-        return self.players.get(user_id)
-    
-    def get_player_by_username(self, username: str) -> Optional[Player]:
-        """Get a player by username."""
-        for player in self.players.values():
-            if player.username == username:
-                return player
+        if chat_id not in self.games:
+            return None
+        game = self.games[chat_id]
+        if user_id in game.players:
+            return game.players[user_id]
         return None
     
-    def remove_player(self, user_id: int) -> bool:
+    def remove_player(self, user_id: int, chat_id : int) -> bool:
         """Remove a player. Returns True if successful."""
-        if user_id in self.players:
-            del self.players[user_id]
+        if chat_id not in self.games:
+            return False
+        game = self.games[chat_id]
+        if user_id in game.players:
+            game.remove_player(user_id)
             return True
         return False
     
-    def get_all_players(self) -> List[Player]:
+    def get_all_players(self, chat_id : int) -> List[Player]:
         """Get all registered players."""
-        return list(self.players.values())
+        if chat_id not in self.games:
+            return []
+        game = self.games[chat_id]
+        return game.players.values()
     
     # Game operations
-    def create_game(self, location: str, date: datetime, max_players: int, 
-                    chat_id: int, created_by: Optional[int] = None) -> Game:
+    def create_game(self, chat_id: int, max_players: int = 18 , created_by: Optional[int] = None, date: datetime = datetime.now()
+                    ,location: str = None) -> Game:
         """Create a new game with chat_id."""
-        game_id = str(uuid.uuid4())
         game = Game(
-            game_id=game_id,
             chat_id=chat_id,
             location=location,
             date=date,
@@ -55,7 +64,7 @@ class Storage:
             max_waitlist=max_players+10,  # Default to 0 if None
             created_by=created_by or 0  # Default to 0 if None
         )
-        self.games[game_id] = game
+        self.games[chat_id] = game
         return game
     
     def get_game(self, game_id: str) -> Optional[Game]:
@@ -73,33 +82,15 @@ class Storage:
             del self.games[game_id]
             return True
         return False
-    def get_games_by_chat_id(self, chat_id: int) -> List[Game]:
-        """Get all games for a chat."""
-        return [game for game in self.games.values() if game.chat_id == chat_id]
-    
-    def get_upcoming_games(self) -> List[Game]:
-        """Get all upcoming games."""
-        return [game for game in self.games.values() if game.date > datetime.now()]
-    
-    def get_nearest_game(self) -> Optional[Game]:
-        """Get the nearest upcoming game."""
-        upcoming_games = self.get_upcoming_games()
-        if upcoming_games:
-            return min(upcoming_games, key=lambda game: game.date)
-        return None
-    # Add to your Storage class
+
     def is_football_group(self, group_id):
         """Check if a group is registered as a football group"""
-        return group_id in self.data.get('football_groups', [])
+        return group_id in self.games.get(group_id)
 
-    def register_football_group(self, group_id, group_name):
+    def register_football_group(self, group_id,user_id):
         """Register a group as a football coordination group"""
-        if 'football_groups' not in self.data:
-            self.data['football_groups'] = {}
-            
-        self.data['football_groups'][group_id] = {
-            'name': group_name,
-            'registered_at': datetime.now().isoformat()
-        }
-        self._save_data()
+        if group_id not in self.games:
+            self.games[group_id] = self.create_game(group_id, max_players=18, created_by=user_id, date=datetime.now(), location="default")
+            return True
+        return False
     
