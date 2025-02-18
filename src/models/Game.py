@@ -24,7 +24,7 @@ class Game:
         self.waiting_list = []  # Waiting list if maximum reached
         self.created_by = created_by  # User ID of the game creator
     
-    @property
+    
     def is_full(self, list_type: str) -> bool:
         """Check if the game has reached max players."""
         if list_type == "players":
@@ -32,7 +32,7 @@ class Game:
         else:
             return len(self.waiting_list) >= self.max_waitlist
     
-    @property
+    
     def available_spots(self, list_type: str) -> int:
         """Get the number of available spots."""
         if list_type == "players":

@@ -1,5 +1,8 @@
 from telegram import Update
 from telegram.ext import ContextTypes
+from models import Player, storage, Game, GameStatus
+
+
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /start command"""
@@ -34,8 +37,7 @@ async def invalid_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ############################################################################
 async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /register command"""
-    args = context.args
-    if len(args) != 1:
-        await update.message.reply_text("Usage: /register <name>")
-        return
-    await update.message.reply_text("You have been registered " + args[0])
+    player = Player.from_update(update)
+    storage.add_player(player)
+    # await update.message.reply_text("You have been registered " + args[0])
+    await update.message.reply_text("You have been registered " + player.full_name)

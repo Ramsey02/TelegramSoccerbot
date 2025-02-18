@@ -2,9 +2,10 @@ from typing import Dict, List, Optional
 from datetime import datetime
 import uuid
 
-from .player import Player
-from .game import Game, GameStatus
+from .Player import Player
+from .Game import Game, GameStatus
 
+# define for different players in different games
 class Storage:
     """Manages in-memory data for the bot without persistence."""
     
@@ -21,6 +22,13 @@ class Storage:
     def get_player(self, user_id: int) -> Optional[Player]:
         """Get a player by user ID."""
         return self.players.get(user_id)
+    
+    def get_player_by_username(self, username: str) -> Optional[Player]:
+        """Get a player by username."""
+        for player in self.players.values():
+            if player.username == username:
+                return player
+        return None
     
     def remove_player(self, user_id: int) -> bool:
         """Remove a player. Returns True if successful."""
@@ -44,6 +52,7 @@ class Storage:
             location=location,
             date=date,
             max_players=max_players,
+            max_waitlist=max_players+10,  # Default to 0 if None
             created_by=created_by or 0  # Default to 0 if None
         )
         self.games[game_id] = game
@@ -67,4 +76,15 @@ class Storage:
     def get_games_by_chat_id(self, chat_id: int) -> List[Game]:
         """Get all games for a chat."""
         return [game for game in self.games.values() if game.chat_id == chat_id]
+    
+    def get_upcoming_games(self) -> List[Game]:
+        """Get all upcoming games."""
+        return [game for game in self.games.values() if game.date > datetime.now()]
+    
+    def get_nearest_game(self) -> Optional[Game]:
+        """Get the nearest upcoming game."""
+        upcoming_games = self.get_upcoming_games()
+        if upcoming_games:
+            return min(upcoming_games, key=lambda game: game.date)
+        return None
     

@@ -2,6 +2,7 @@ import logging
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from config import Config
 from handlers.basic_handlers import *
+from models import Storage, Player, Game, GameStatus
 
 # Set up logging
 logging.basicConfig(
