@@ -29,6 +29,7 @@ def main():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("HELPMEBRO", helpOutBro_command))
     application.add_handler(CommandHandler("register", register_handler))
+    application.add_handler(CommandHandler("setup_football", setup_football_group))
     application.add_handler(MessageHandler(filters.TEXT & ~ filters.COMMAND,notACommand_handler))
     application.add_handler(MessageHandler(filters.COMMAND,invalid_command))
 

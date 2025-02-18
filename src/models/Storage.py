@@ -87,4 +87,19 @@ class Storage:
         if upcoming_games:
             return min(upcoming_games, key=lambda game: game.date)
         return None
+    # Add to your Storage class
+    def is_football_group(self, group_id):
+        """Check if a group is registered as a football group"""
+        return group_id in self.data.get('football_groups', [])
+
+    def register_football_group(self, group_id, group_name):
+        """Register a group as a football coordination group"""
+        if 'football_groups' not in self.data:
+            self.data['football_groups'] = {}
+            
+        self.data['football_groups'][group_id] = {
+            'name': group_name,
+            'registered_at': datetime.now().isoformat()
+        }
+        self._save_data()
     
