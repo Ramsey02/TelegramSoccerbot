@@ -2,7 +2,6 @@ import logging
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from config import Config
 from handlers.basic_handlers import *
-from models import Storage, Player, Game
 
 # Set up logging
 logging.basicConfig(
@@ -22,17 +21,27 @@ def main():
     
     # Create application instance
     application = Application.builder().token(Config.BOT_TOKEN).build()
-
     
     # Add handlers
-    #  put try and catch for throwing errors
+    # Basic command handlers
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("HELPMEBRO", helpOutBro_command))
+    
+    # game management handlers
+    application.add_handler(CommandHandler("create_game", create_game))
+    application.add_handler(CommandHandler("cancel_game", cancel_game))
+    # Player management handlers
     application.add_handler(CommandHandler("register", register_handler))
+    application.add_handler(CommandHandler("remove", remove_player))
+    application.add_handler(CommandHandler("list", list_players))
+    
+    # Group setup handlers
     application.add_handler(CommandHandler("setup_football", setup_football_group))
-    application.add_handler(MessageHandler(filters.TEXT & ~ filters.COMMAND,notACommand_handler))
-    application.add_handler(MessageHandler(filters.COMMAND,invalid_command))
+    
+    # Default handlers for unrecognized messages
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, notACommand_handler))
+    application.add_handler(MessageHandler(filters.COMMAND, invalid_command))
 
     # Add error handler
     application.add_error_handler(error_handler)

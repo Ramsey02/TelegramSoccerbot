@@ -20,41 +20,65 @@ class Storage:
     # Player operations
     def add_player(self, player: Player, chat_id : int) -> bool:
         """Add or update a player in storage."""
-        if chat_id not in self.games:
-            return False
         game = self.games[chat_id]
-        game.add_player(player.user_id)
-        return True
+        return game.add_player(player.user_id)
+
         
     def get_player(self, user_id: int, chat_id : int) -> Optional[Player]:
         """Get a player by user ID."""
-        if chat_id not in self.games:
-            return None
         game = self.games[chat_id]
-        if user_id in game.players:
+        if user_id in game.players or user_id in game.waiting_list:
             return game.players[user_id]
         return None
     
     def remove_player(self, user_id: int, chat_id : int) -> bool:
         """Remove a player. Returns True if successful."""
-        if chat_id not in self.games:
-            return False
         game = self.games[chat_id]
         if user_id in game.players:
             game.remove_player(user_id)
             return True
         return False
     
-    def get_all_players(self, chat_id : int) -> List[Player]:
+    def get_all_players_in_both_lists(self, chat_id : int) -> List[Player]:
         """Get all registered players."""
         if chat_id not in self.games:
             return []
         game = self.games[chat_id]
-        return game.players.values()
+        play_list = game.players.values()
+        wait_list = game.waitlist.values()
+        return play_list + wait_list
+
+    def get_all_players_in_play_list(self, chat_id : int) -> List[Player]:
+        """Get all registered players."""
+        if chat_id not in self.games:
+            return []
+        game = self.games[chat_id]
+        play_list = game.players.values()
+        return play_list 
+    
+    def get_num_all_players_in_both_lists(self, chat_id : int) -> int:
+        """Get the number of registered players."""
+        if chat_id not in self.games:
+            return 0
+        game = self.games[chat_id]
+        return len(get_all_players_in_both_lists(chat_id))
+
+    def get_num_all_players_in_play_list(self, chat_id : int) -> int:
+        """Get the number of registered players."""
+        if chat_id not in self.games:
+            return 0
+        game = self.games[chat_id]
+        return len(get_all_players_in_play_list(chat_id))
+    
+    def get_all_players_in_wait_list(self, chat_id : int) -> List[Player]:
+        """Get all registered players."""
+        game = self.games[chat_id]
+        wait_list = game.waitlist.values()
+        return wait_list
     
     # Game operations
-    def create_game(self, chat_id: int, max_players: int = 18 , created_by: Optional[int] = None, date: datetime = datetime.now()
-                    ,location: str = None) -> Game:
+    def create_game(self, chat_id: int,created_by: Optional[int] = None, max_players: int = 18,
+                    date: datetime = datetime.now() , location: str=None) -> Game:
         """Create a new game with chat_id."""
         game = Game(
             chat_id=chat_id,
@@ -69,7 +93,14 @@ class Storage:
     
     def get_game(self, game_id: str) -> Optional[Game]:
         """Get a game by ID."""
-        return self.games.get(game_id)
+        if game_id in self.games:
+            return self.games.get(game_id)
+        else:
+            return None
+        
+    def is_group_registered(self, group_id: int) -> bool:
+        """Check if a group is registered."""
+        return group_id in self.games
     
     def update_game(self, game: Game) -> None:
         """Update a game in storage."""
@@ -87,10 +118,11 @@ class Storage:
         """Check if a group is registered as a football group"""
         return group_id in self.games.get(group_id)
 
-    def register_football_group(self, group_id,user_id):
-        """Register a group as a football coordination group"""
+    def register_football_group(self, group_id):
+        """Register a group as a football coordination group, just registeration, no games created"""
+        """Return True if successful"""
         if group_id not in self.games:
-            self.games[group_id] = self.create_game(group_id, max_players=18, created_by=user_id, date=datetime.now(), location="default")
+            self.games[group_id] = None
             return True
         return False
     
