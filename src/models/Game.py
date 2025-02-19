@@ -2,13 +2,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Dict, Optional
 from enum import Enum
-
+from models.Player import Player
 
 class Game:
     """Represents a soccer game event."""
     
-    def __init__(self, chat_id: int, location: str, date: datetime, max_players: int, 
-                 max_waitlist: Optional[int] = None, created_by: Optional[int] = None):
+    def __init__(self, chat_id, location: str, date: datetime, max_players: int, 
+                 max_waitlist = 0, created_by = 0):
         """
         Initialize a new game.
 
@@ -19,10 +19,8 @@ class Game:
         :param max_waitlist: Maximum number of players on the waiting list (default is max_players + 10)
         :param created_by: User ID of the game creator (default is 0)
         """
-        if max_waitlist is None:
+        if max_waitlist is 0:
             max_waitlist = max_players + 10
-        if created_by is None:
-            created_by = 0
         self.chat_id = chat_id  # Telegram chat ID
         self.location = location  # Where the game will be played
         self.date = date  # When the game will be played
@@ -31,44 +29,64 @@ class Game:
         self.players = []  # List of player user IDs
         self.waiting_list = []  # Waiting list if maximum reached
         self.created_by = created_by  # User ID of the game creator
-    
-    
-    def is_full(self, list_type: str) -> bool:
-        """Check if the game has reached max players."""
-        if list_type == "players":
-            return len(self.players) >= self.max_players
-        else:
-            return len(self.waiting_list) >= self.max_waitlist
-    
-    
-    def available_spots(self, list_type: str) -> int:
-        """Get the number of available spots."""
-        if list_type == "players":
-            return self.max_players - len(self.players)
-        else:
-            return self.max_waitlist - len(self.waiting_list)
-    
-    def add_player(self, user_id: int) -> bool:
+      
+    def add_player(self,  new_player: Player) -> bool:
         """Add a player to the game."""
-        if not self.is_full("players"):
-            self.players.append(user_id)
+        if len(self.players) < self.max_players:
+            self.players.append(new_player)
             return True
-        else:  # If the game is full, add to waiting list if possible
-            if not self.is_full("waiting_list"):
-                self.waiting_list.append(user_id)
-                return True
-            return False
-        
-    def remove_player(self, user_id: int) -> bool:
-        """Remove a player from the game."""
-        if user_id in self.players:
-            self.players.remove(user_id)
-            # If there are players on the waiting list, promote the first one to the game
-            if self.waiting_list:
-                promoted_player = self.waiting_list.pop(0)
-                self.players.append(promoted_player)
-            return True
-        elif user_id in self.waiting_list:
-            self.waiting_list.remove(user_id)
+        elif len(self.waiting_list) < self.max_waitlist:
+            self.waiting_list.append(new_player)
             return True
         return False
+        
+    def remove_player(self, user_id) -> bool:
+        """Remove a player from the game."""
+        if user_id in [player.user_id for player in self.players]:
+            player = self.get_player(user_id)
+            # !! check if this compasion holds true from the player class
+            self.players.remove(player)
+            return True
+        elif user_id in [player.user_id for player in self.waiting_list]:
+            player = self.get_player(user_id)
+            self.waiting_list.remove(player)
+            return True
+        return False
+    
+    def get_player(self,user_id)->Player:
+        """Get a player by user ID."""
+        for player in self.players:
+            if player.user_id == user_id:
+                return player
+        for player in self.waiting_list:
+            if player.user_id == user_id:
+                return player
+        return None
+    
+    def is_player_on_play_list(self,player: Player)->bool:
+        """Check if a player is on the play list"""
+        return player in self.players
+    
+    def is_player_on_wait_list(self,player: Player)->bool:
+        """Check if a player is on the wait list"""
+        return player in self.waiting_list
+    
+    def get_all_players_names_on_play_list(self)->List[str]:
+        """Get all the players names"""
+        return [player.full_name for player in self.players]
+    
+    def get_players_names_on_wait_list(self)->List[str]:
+        """Get all the players names"""
+        return [player.full_name for player in self.waiting_list]
+    
+    def get_num_players(self)->int:
+        """Get the number of players"""
+        return len(self.players)
+    
+    def get_num_players_on_wait_list(self)->int:    
+        """Get the number of players"""
+        return len(self.waiting_list)
+    
+    def get_num_players_total(self)->int:
+        """Get the number of players"""
+        return len(self.players) + len(self.waiting_list)

@@ -138,7 +138,7 @@ async def notACommand_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
     message_text = "I'm sorry, I only understand commands. use /help to see available commands."
     
     # Check if message is from a group chat
-    if await is_group_chat(update):
+    if is_group_chat(update):
         # Send message privately
         await context.bot.send_message(
             chat_id=update.effective_user.id,
@@ -156,7 +156,7 @@ async def invalid_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_text = "Invalid command. Use /help to see available commands."
     
     # Check if message is from a group chat
-    if await is_group_chat(update):
+    if is_group_chat(update):
         # Send message privately
         await context.bot.send_message(
             chat_id=update.effective_user.id,
@@ -342,7 +342,7 @@ async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
     else:
         await update.message.reply_text("This command can only be used in group chats.")
-    cleanup_command(update)
+    await cleanup_command(update)
 
 async def remove_player(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /remove command"""
@@ -362,24 +362,4 @@ async def remove_player(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=user_id,text=f"{update.effective_user.full_name} has been removed from the game.")
     else:
         await context.bot.send_message(chat_id=user_id,text="An error occurred while trying to remove the player.")
-    await cleanup_command(update)
-
-async def list_players(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle the /list command"""
-    chat_id = update.effective_chat.id
-    if not is_group_chat(update):
-        await context.bot.send_message(chat_id=chat_id,text="This bot is meant to be used in group chats only.")
-        return
-    if not is_group_setup(update):
-        await context.bot.send_message(chat_id=chat_id,text="This group is not set up for football coordination yet. Ask an admin to set it up first.")
-        return
-    if not is_there_game(update):
-        await context.bot.send_message(chat_id=chat_id,text="This group has no active game.")
-        return
-    game = storage.get_game(chat_id)
-    playing_list = game.playing_list
-    waiting_list = game.waiting_list
-    playing_list_text = "\n".join([player.full_name for player in playing_list])
-    waiting_list_text = "\n".join([player.full_name for player in waiting_list])
-    await context.bot.send_message(chat_id=chat_id,text=f"Playing list:\n{playing_list_text}\n\nWaiting list:\n{waiting_list_text}")
     await cleanup_command(update)

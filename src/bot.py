@@ -34,7 +34,7 @@ def main():
     # Player management handlers
     application.add_handler(CommandHandler("register", register_handler))
     application.add_handler(CommandHandler("remove", remove_player))
-    application.add_handler(CommandHandler("list", list_players))
+    # application.add_handler(CommandHandler("list", list_players))
     
     # Group setup handlers
     application.add_handler(CommandHandler("setup_football", setup_football_group))
