@@ -218,15 +218,19 @@ async def create_game(update: Update, context : ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if not is_group_chat(update):
         await context.bot.send_message(chat_id=chat_id,text="This bot is meant to be used in group chats only.")
+        await cleanup_command(update)
         return
     if not is_group_setup(update):
         await context.bot.send_message(chat_id=chat_id,text="This group is not set up for football coordination yet. Ask an admin to set it up first.")
+        await cleanup_command(update)
         return
     if not await is_admin(update):
         await context.bot.send_message(chat_id=chat_id,text="Only group administrators can create a new game.")
+        await cleanup_command(update)
         return
     if is_there_game(update):
         await context.bot.send_message(chat_id=chat_id,text="This group already has an active game.")
+        await cleanup_command(update)
         return
     ''' args in this order (if there are any): max_players, date, location'''
     '''checking args with a helper function, args can be 0 or 1 or 2 or 3'''
@@ -234,20 +238,20 @@ async def create_game(update: Update, context : ContextTypes.DEFAULT_TYPE):
     await cleanup_command(update)
 
 async def aux_create_game_by_diff_num_args(update, context, chat_id) -> bool:
-    sorted_args = sorted(context.args)
+    sorted_args = context.args
     creator_name = update.effective_user.full_name
-    if len(sorted_args) > 3:
-        await context.bot.send_message(chat_id=chat_id, text="Too many arguments. Use /help to see how to use this command.")
-        return False
+    first_arg = sorted_args[0]
+    if isinstance(first_arg, str):
+        location = ' '.join(sorted_args)
+        game = storage.create_game(chat_id, update.effective_user.id, location=first_arg)
+        await context.bot.send_message(chat_id=chat_id, text=f"⭐⭐ A new game has been created by {creator_name} at {location}! \n Use /register to join the game.⭐⭐")
+        return True
     if len(sorted_args) == 1:
         '''first one might be either max_players or just a string for location'''
         first_arg = sorted_args[0]
-        if isinstance(first_arg, str):
-            game = storage.create_game(chat_id, update.effective_user.id, location=first_arg)
-            await context.bot.send_message(chat_id=chat_id, text=f"⭐⭐ A new game has been created by {creator_name} at {first_arg}! Use /register to join the game.⭐⭐")
-        elif isinstance(first_arg, int):
+        if isinstance(first_arg, int):
             game = storage.create_game(chat_id, update.effective_user.id, max_players=first_arg)
-            await context.bot.send_message(chat_id=chat_id, text=f"⭐⭐ A new game has been created by {creator_name} with a maximum of {first_arg} players! Use /register to join the game.⭐⭐")
+            await context.bot.send_message(chat_id=chat_id, text=f"⭐⭐ A new game has been created by {creator_name} with a maximum of {first_arg} players! \n Use /register to join the game.⭐⭐")
         else:
             await context.bot.send_message(chat_id=chat_id, text="Invalid argument. Use /help to see how to use this command.")
             return False
@@ -312,6 +316,7 @@ async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=user_id,
                 text="This group is not set up for football coordination yet ❗ Ask an admin to set it up first. "
             )
+            await cleanup_command(update)
             return
         
         if not is_there_game(update):
@@ -319,6 +324,7 @@ async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=user_id,
                 text="This group has no active game❗ Ask an admin to set it up first. "
             )
+            await cleanup_command(update)
             return
         
         if is_player_registered(update):
@@ -326,6 +332,7 @@ async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=user_id,
                 text="You are already registered for this game.❗❗"
             )
+            await cleanup_command(update)
             return
         player = Player.from_update(update)
         # Register the player with this group
@@ -335,6 +342,7 @@ async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=user_id,
                 text=f"{player.full_name} has been registered successfully! ✅"
             )
+            await list_players(update, context)
         else:
             await context.bot.send_message(
                 chat_id=user_id,
@@ -350,16 +358,47 @@ async def remove_player(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if not is_group_chat(update):
         await context.bot.send_message(chat_id=user_id,text="This bot is meant to be used in group chats only.")
+        await cleanup_command(update)
         return
     if not is_group_setup(update):
         await context.bot.send_message(chat_id=user_id,text="This group is not set up for football coordination yet. Ask an admin to set it up first.")
+        await cleanup_command(update)
         return
     if not is_player_registered(update):
         await context.bot.send_message(chat_id=user_id,text="You are not registered for this game.")
+        await cleanup_command(update)
         return
     result = storage.remove_player(user_id,chat_id)
     if result:
-        await context.bot.send_message(chat_id=user_id,text=f"{update.effective_user.full_name} has been removed from the game.")
+        await context.bot.send_message(chat_id=user_id,text=f"{update.effective_user.full_name} has been removed from the game. ✅")
+        await list_players(update, context)
     else:
         await context.bot.send_message(chat_id=user_id,text="An error occurred while trying to remove the player.")
+    await cleanup_command(update)
+
+async def list_players(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle the /list command"""
+    chat_id = update.effective_chat.id
+    if not is_group_chat(update):
+        await context.bot.send_message(chat_id=chat_id,text="This bot is meant to be used in group chats only.")
+        await cleanup_command(update)
+        return
+    if not is_group_setup(update):
+        await context.bot.send_message(chat_id=chat_id,text="This group is not set up for football coordination yet. Ask an admin to set it up first.")
+        await cleanup_command(update)
+        return
+    if not is_there_game(update):
+        await context.bot.send_message(chat_id=chat_id,text="This group has no active game.")
+        await cleanup_command(update)
+        return
+    players = storage.get_all_players_in_play_list(chat_id)
+
+    player_names = '\n'.join([f"{i+1}. {player}" for i, player in enumerate(players)])
+    waiting_list = storage.get_all_players_in_waiting_list(chat_id)
+    if not waiting_list:
+        await context.bot.send_message(chat_id=chat_id,text=f"Players in the game: \n {player_names}")
+        await cleanup_command(update)
+        return
+    waiting_list_names = '\n'.join([f"{i+1}. {player}" for i, player in enumerate(waiting_list)])
+    await context.bot.send_message(chat_id=chat_id,text=f"Players in the game: {player_names}\n Waiting list: {waiting_list_names}")
     await cleanup_command(update)

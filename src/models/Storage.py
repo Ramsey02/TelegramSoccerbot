@@ -37,10 +37,11 @@ class Storage:
         """Get all registered players."""
         game = self.games[chat_id]
         return game.get_all_players_names_on_play_list()
+    
     def get_all_players_in_waiting_list(self, chat_id) -> List[Player]:
         """Get all registered players."""
         game = self.games[chat_id]
-        return game.get_all_players_names_on_waiting_list()
+        return game.get_players_names_on_wait_list()
     
     # Game operations
     

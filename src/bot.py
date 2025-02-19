@@ -23,6 +23,9 @@ def main():
     application = Application.builder().token(Config.BOT_TOKEN).build()
     
     # Add handlers
+    # Group setup handlers
+    application.add_handler(CommandHandler("setup_football", setup_football_group))
+    
     # Basic command handlers
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
@@ -34,10 +37,8 @@ def main():
     # Player management handlers
     application.add_handler(CommandHandler("register", register_handler))
     application.add_handler(CommandHandler("remove", remove_player))
-    # application.add_handler(CommandHandler("list", list_players))
+    application.add_handler(CommandHandler("list", list_players))
     
-    # Group setup handlers
-    application.add_handler(CommandHandler("setup_football", setup_football_group))
     
     # Default handlers for unrecognized messages
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, notACommand_handler))
