@@ -18,15 +18,16 @@ so every groupchat has its own single active game, every groupchat has to setup 
 and after that they can create games and cancel them.
 '''
 ######################## helper functions ##################################
-async def cleanup_command(update: Update):
+async def cleanup_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Delete a command message if possible"""
     try:
         await update.message.delete()
         return True
     except Exception as e:
-        await update.context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text="An error occurred while trying to delete the command message.")
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="An error occurred while trying to delete the command message."
+        )
         pass
 
 async def is_admin(update: Update):
@@ -84,34 +85,68 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id,text="This bot is meant to be used in group chats only.")
         return
     await context.bot.send_message(chat_id=update.effective_user.id,text="Hello! I'm the football coordination bot. Use /help to see available commands.")
-    await cleanup_command(update)
+    await cleanup_command(update,context)
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle the /help command"""
-    help_text = """
-Available commands:
-/start - Start the bot
-/help - Show this help message
-/register - Register for the game
-/remove - Remove yourself from the player list
-/list - Show the current teams and waiting list
-/setup_football - Set up this group for football coordination (admin only)
     """
-    
-    # Check if message is from a group chat
-    if is_group_chat(update):
-        # Send help message privately
+    Enhanced help command that provides detailed information about all available commands,
+    including setup requirements and game management features.
+    """
+    help_text = """
+🎮 *Basic Commands*
+/start - Initialize the bot
+/help - Display this help message
+/register - Join the current game
+/remove - Remove yourself from the game
+/list - Show current players and waiting list
+
+👑 *Admin Commands*
+/setup_football - *Required first step*: Initialize group for football coordination (admin only)
+/create_game - Create a new game (admin only). 
+    Usage options:
+  • /create_game <normal sentence (that starts with a word not a number)>
+  • /create_game <max_players>
+  • /create_game <max_players> <date> 
+  • /create_game <max_players> <date> <location>
+/cancel_game - Cancel the current active game (admin only)
+
+📋 *Important Notes*
+- The group must be set up using /setup_football before any other commands will work
+- Only one active game can exist per group at a time
+- Players automatically go to waiting list if the game is full
+- All game management commands require admin privileges
+- Commands in group chats will be deleted and responses sent privately
+
+💡 *Example Usage*
+Create game examples:
+- /create_game "in technion's field at 18:00" 
+- /create_game 10
+- /create_game 12 "2024-03-01 18:00"
+- /create_game 14 "2024-03-01 18:00" "Central Park"
+
+For more help, feel free to ask in the group!"""
+
+    # Format text as markdown
+    try:
+        if is_group_chat(update):
+            # Send help message privately
+            await context.bot.send_message(
+                chat_id=update.effective_user.id,
+                text=help_text            )
+            # Delete the command message from the group
+            await cleanup_command(update, context)
+        else:
+            # Direct message - reply normally
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=help_text            )
+    except Exception as e:
+        # Fallback without markdown if formatting fails
         await context.bot.send_message(
             chat_id=update.effective_user.id,
-            text=help_text
+            text="Error displaying help message. Please try again later."
         )
-        # Delete the command message from the group
-        await cleanup_command(update)
-    else:
-        # Direct message - reply normally
-        await update.message.reply_text(help_text)
-
 
 async def helpOutBro_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /help command"""
@@ -127,7 +162,7 @@ dont worry about it got you, i got you, just enter in the chat "/help"
             text=help_text
         )
         # Delete the command message from the group
-        await cleanup_command(update)
+        await cleanup_command(update,context)
     else:
         # Direct message - reply normally
         await update.message.reply_text(help_text)
@@ -145,7 +180,7 @@ async def notACommand_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
             text=message_text
         )
         # Delete the original message from the group
-        await cleanup_command(update)
+        await cleanup_command(update,context)
     else:
         # Direct message - reply normally
         await update.message.reply_text(message_text)
@@ -163,7 +198,7 @@ async def invalid_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text=message_text
         )
         # Delete the command message from the group
-        await cleanup_command(update)
+        await cleanup_command(update,context)
     else:
         # Direct message - reply normally
         await update.message.reply_text(message_text)
@@ -211,40 +246,43 @@ async def setup_football_group(update: Update, context: ContextTypes.DEFAULT_TYP
                 chat_id=chat_id,
                 text="An error occurred while setup! Please try again.")
         pass
-    await cleanup_command(update)     
+    await cleanup_command(update,context)     
 
 async def create_game(update: Update, context : ContextTypes.DEFAULT_TYPE):
     """Create a new game"""
     chat_id = update.effective_chat.id
     if not is_group_chat(update):
         await context.bot.send_message(chat_id=chat_id,text="This bot is meant to be used in group chats only.")
-        await cleanup_command(update)
+        await cleanup_command(update,context)
         return
     if not is_group_setup(update):
         await context.bot.send_message(chat_id=chat_id,text="This group is not set up for football coordination yet. Ask an admin to set it up first.")
-        await cleanup_command(update)
+        await cleanup_command(update,context)
         return
     if not await is_admin(update):
         await context.bot.send_message(chat_id=chat_id,text="Only group administrators can create a new game.")
-        await cleanup_command(update)
+        await cleanup_command(update,context)
         return
     if is_there_game(update):
         await context.bot.send_message(chat_id=chat_id,text="This group already has an active game.")
-        await cleanup_command(update)
+        await cleanup_command(update,context)
         return
     ''' args in this order (if there are any): max_players, date, location'''
     '''checking args with a helper function, args can be 0 or 1 or 2 or 3'''
     result = await aux_create_game_by_diff_num_args(update, context, chat_id)
-    await cleanup_command(update)
+    await cleanup_command(update,context)
 
 async def aux_create_game_by_diff_num_args(update, context, chat_id) -> bool:
     sorted_args = context.args
+    if len(sorted_args) == 0:
+        await context.bot.send_message(chat_id=update.effective_user.id, text=f"you cant create games without any details about it. Use /help to see how to use this command.")
+        return
     creator_name = update.effective_user.full_name
     first_arg = sorted_args[0]
     if isinstance(first_arg, str):
         location = ' '.join(sorted_args)
         game = storage.create_game(chat_id, update.effective_user.id, location=first_arg)
-        await context.bot.send_message(chat_id=chat_id, text=f"⭐⭐ A new game has been created by {creator_name} at {location}! \n Use /register to join the game.⭐⭐")
+        await context.bot.send_message(chat_id=chat_id, text=f"⭐⭐ A new game has been created by {creator_name} at \n {location}! \n Use /register to join the game.⭐⭐")
         return True
     if len(sorted_args) == 1:
         '''first one might be either max_players or just a string for location'''
@@ -295,7 +333,7 @@ async def cancel_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await context.bot.send_message(chat_id=chat_id,text="An error occurred while trying to cancel the current game.")
 
-    await cleanup_command(update)
+    await cleanup_command(update,context)
 
 """
 since i cannot use get_common_chats() to check the common groupchats between the bot and the player,
@@ -316,7 +354,7 @@ async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=user_id,
                 text="This group is not set up for football coordination yet ❗ Ask an admin to set it up first. "
             )
-            await cleanup_command(update)
+            await cleanup_command(update,context)
             return
         
         if not is_there_game(update):
@@ -324,7 +362,7 @@ async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=user_id,
                 text="This group has no active game❗ Ask an admin to set it up first. "
             )
-            await cleanup_command(update)
+            await cleanup_command(update,context)
             return
         
         if is_player_registered(update):
@@ -332,7 +370,7 @@ async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=user_id,
                 text="You are already registered for this game.❗❗"
             )
-            await cleanup_command(update)
+            await cleanup_command(update,context)
             return
         player = Player.from_update(update)
         # Register the player with this group
@@ -348,9 +386,11 @@ async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=user_id,
                 text="the playing list and waitlist are full. Please try again later."
             )
+            await cleanup_command(update,context)
     else:
         await update.message.reply_text("This command can only be used in group chats.")
-    await cleanup_command(update)
+        await cleanup_command(update,context)
+
 
 async def remove_player(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /remove command"""
@@ -358,15 +398,15 @@ async def remove_player(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if not is_group_chat(update):
         await context.bot.send_message(chat_id=user_id,text="This bot is meant to be used in group chats only.")
-        await cleanup_command(update)
+        await cleanup_command(update,context)
         return
     if not is_group_setup(update):
         await context.bot.send_message(chat_id=user_id,text="This group is not set up for football coordination yet. Ask an admin to set it up first.")
-        await cleanup_command(update)
+        await cleanup_command(update,context)
         return
     if not is_player_registered(update):
         await context.bot.send_message(chat_id=user_id,text="You are not registered for this game.")
-        await cleanup_command(update)
+        await cleanup_command(update,context)
         return
     result = storage.remove_player(user_id,chat_id)
     if result:
@@ -374,22 +414,22 @@ async def remove_player(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await list_players(update, context)
     else:
         await context.bot.send_message(chat_id=user_id,text="An error occurred while trying to remove the player.")
-    await cleanup_command(update)
+        await cleanup_command(update,context)
 
 async def list_players(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /list command"""
     chat_id = update.effective_chat.id
     if not is_group_chat(update):
         await context.bot.send_message(chat_id=chat_id,text="This bot is meant to be used in group chats only.")
-        await cleanup_command(update)
+        await cleanup_command(update,context)
         return
     if not is_group_setup(update):
         await context.bot.send_message(chat_id=chat_id,text="This group is not set up for football coordination yet. Ask an admin to set it up first.")
-        await cleanup_command(update)
+        await cleanup_command(update,context)
         return
     if not is_there_game(update):
         await context.bot.send_message(chat_id=chat_id,text="This group has no active game.")
-        await cleanup_command(update)
+        await cleanup_command(update,context)
         return
     players = storage.get_all_players_in_play_list(chat_id)
 
@@ -397,8 +437,8 @@ async def list_players(update: Update, context: ContextTypes.DEFAULT_TYPE):
     waiting_list = storage.get_all_players_in_waiting_list(chat_id)
     if not waiting_list:
         await context.bot.send_message(chat_id=chat_id,text=f"Players in the game: \n {player_names}")
-        await cleanup_command(update)
+        await cleanup_command(update,context)
         return
     waiting_list_names = '\n'.join([f"{i+1}. {player}" for i, player in enumerate(waiting_list)])
     await context.bot.send_message(chat_id=chat_id,text=f"Players in the game: {player_names}\n Waiting list: {waiting_list_names}")
-    await cleanup_command(update)
+    await cleanup_command(update,context)

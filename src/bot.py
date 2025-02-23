@@ -32,6 +32,7 @@ def main():
     application.add_handler(CommandHandler("HELPMEBRO", helpOutBro_command))
     
     # game management handlers
+    application.add_handler(CommandHandler("create", create_game))
     application.add_handler(CommandHandler("create_game", create_game))
     application.add_handler(CommandHandler("cancel_game", cancel_game))
     # Player management handlers
