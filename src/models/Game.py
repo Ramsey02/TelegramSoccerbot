@@ -19,7 +19,7 @@ class Game:
         :param max_waitlist: Maximum number of players on the waiting list (default is max_players + 10)
         :param created_by: User ID of the game creator (default is 0)
         """
-        if max_waitlist is 0:
+        if max_waitlist == 0:
             max_waitlist = max_players + 10
         self.chat_id = chat_id  # Telegram chat ID
         self.location = location  # Where the game will be played
